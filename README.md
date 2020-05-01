@@ -1,4 +1,4 @@
-# ![ghosts](helpers/ghosts-spectre-sm.png) SPECTRE (GHOSTS AGENT PREFERENCES)
+# ![ghosts](assets/ghosts-spectre-sm.png) SPECTRE (GHOSTS AGENT PREFERENCES)
 
 ## TLDR;
 
@@ -60,4 +60,4 @@ DefaultConnection"DefaultConnection": "Host=localhost;Port=5432;Database=prefere
 
 ---
 
-![ghosts](helpers/ghosts-spectre.png)
+![ghosts](assets/ghosts-spectre.png)
