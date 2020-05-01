@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <RootNamespace>Ghosts.Spectre</RootNamespace>
+        <GenerateDocumentationfile>True</GenerateDocumentationfile>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <noWarn>1591</noWarn>
+
+        <AssemblyName>ghosts.spectre</AssemblyName>
+        <ReleaseVersion>0.1.0.0</ReleaseVersion>
+        <Version>0.1.0.0</Version>
+        <AssemblyVersion>0.1.0.0</AssemblyVersion>
+        <FileVersion>0.1.0.0</FileVersion>
+        <SynchReleaseVersion>false</SynchReleaseVersion>
+        
+        <Authors>Dustin Updyke for Carnegie Mellon University</Authors>
+        <Company>Carnegie Mellon University</Company>
+        <Product>GHOSTS SPECTRE</Product>
+        <Description>GHOSTS SPECTRE (GHOSTS AGENT PREFERENCES) - please email ddupdyke@sei.cmu.edu with bugs/requests/other</Description>
+        <Copyright>Carnegie Mellon University 2020</Copyright>
+
+        
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="9.0.0" />
+      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
+      <PackageReference Include="FileHelpers" Version="3.4.1" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.0" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+      <PackageReference Include="RestSharp" Version="106.10.1-alpha.0.9" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc5" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="5.0.0-rc5" />
+      <PackageReference Include="Dapper" Version="2.0.30" />
+
+      <!-- ML -->
+      <PackageReference Include="Microsoft.ML" Version="1.4.0" />
+      <PackageReference Include="Microsoft.ML.Recommender" Version="0.16.0" />
+      <PackageReference Include="Microsoft.ML.AutoML" Version="0.16.0" />
+      <!-- END ML -->
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="config\personas.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config\setup.sql">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config\sites.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config\categories.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+
+</Project>
