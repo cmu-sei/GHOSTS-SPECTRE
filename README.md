@@ -58,6 +58,8 @@ DefaultConnection"DefaultConnection": "Host=localhost;Port=5432;Database=prefere
 
 ## How to use SPECTRE
 
+See Wiki
+
 ---
 
 ![ghosts](assets/ghosts-spectre.png)
