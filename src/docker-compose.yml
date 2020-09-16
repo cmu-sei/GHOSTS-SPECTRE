@@ -15,7 +15,7 @@ networks:
     driver: bridge
 services:
   ghosts-spectre:
-    image: ghosts/spectre
+    image: dustinupdyke/ghosts-spectre
     container_name: ghosts-spectre
     ports:
       - '5001:5000'
