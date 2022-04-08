@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ghosts.Spectre.Infrastructure.Data
 {
-    public class ApplicationDbContext : DbContext
+    public sealed class ApplicationDbContext : DbContext
     {
         public DbSet<Agent> Agents { get; set; }
         public DbSet<Tag> Tags { get; set; }
@@ -27,15 +27,15 @@ namespace Ghosts.Spectre.Infrastructure.Data
         public DbSet<AgentTagHistory> AgentTagHistories { get; set; }
         public DbSet<Persona> Personas { get; set; }
         
-        public DbSet<ML.Entities.Categories> Categories { get; set; }
-        public DbSet<ML.Entities.Sites> Sites { get; set; }
-        public DbSet<ML.Entities.LearnedImport> LearnedImports { get; set; }
-        public DbSet<ML.Entities.LearnedRecommendations> LearnedRecommendations { get; set; }
-        public DbSet<ML.Entities.TempSites> TempSites { get; set; }
-        public DbSet<ML.Entities.AgentBrowseHistory> AgentBrowseHistories { get; set; }
-        public DbSet<ML.Entities.LearnedImportExtended> LearnedImportExtended { get; set; }
-        public DbSet<ML.Entities.AgentBrowseHistoryRandom> AgentBrowseHistoryRandoms { get; set; }
-        public DbSet<ML.Entities.TempAgentBrowseHistory> TempAgentBrowseHistories { get; set; }
+        public DbSet<Entities.Categories> Categories { get; set; }
+        public DbSet<Entities.Sites> Sites { get; set; }
+        public DbSet<Entities.LearnedImport> LearnedImports { get; set; }
+        public DbSet<Entities.LearnedRecommendations> LearnedRecommendations { get; set; }
+        public DbSet<Entities.TempSites> TempSites { get; set; }
+        public DbSet<Entities.AgentBrowseHistory> AgentBrowseHistories { get; set; }
+        public DbSet<Entities.LearnedImportExtended> LearnedImportExtended { get; set; }
+        public DbSet<Entities.AgentBrowseHistoryRandom> AgentBrowseHistoryRandoms { get; set; }
+        public DbSet<Entities.TempAgentBrowseHistory> TempAgentBrowseHistories { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
@@ -73,21 +73,22 @@ namespace Ghosts.Spectre.Infrastructure.Data
                 //load persona service and create tag for each distinct tag found there
                 var s = PersonaService.LoadDefaults();
 
-                foreach (var item in s.GroupBy(elem => elem.Name).Select(group => group.First()))
+                var personaSeedValuesEnumerable = s as PersonaSeedValues[] ?? s.ToArray();
+                foreach (var item in personaSeedValuesEnumerable.GroupBy(elem => elem.Name).Select(group => group.First()))
                 {
                     context.Personas.Add(new Persona { Name = item.Name });
                 }
-                foreach (var item in s.GroupBy(elem => elem.Tag).Select(group => group.First()))
+                foreach (var item in personaSeedValuesEnumerable.GroupBy(elem => elem.Tag).Select(group => group.First()))
                 {
                     context.Tags.Add(new Tag { Name = item.Tag });
                 }
                 context.SaveChanges();
 
-                foreach (var item in s)
+                foreach (var item in personaSeedValuesEnumerable)
                 {
                     var tag = context.Tags.FirstOrDefault(o => o.Name == item.Tag);
                     var persona = context.Personas.FirstOrDefault(o => o.Name != null && o.Name == item.Name);
-                    persona?.PersonaTags.Add(new PersonaTag { TagId = tag.Id, High = item.High, Low = item.Low });
+                    if (tag != null) persona?.PersonaTags.Add(new PersonaTag { TagId = tag.Id, High = item.High, Low = item.Low });
                 }
                 context.SaveChanges();
 
@@ -96,19 +97,25 @@ namespace Ghosts.Spectre.Infrastructure.Data
 
                 var random = new Random();
                 var x = context.Personas.FirstOrDefault(o => o.Name.ToLower() == "sports");
-                foreach (var personaTag in x?.PersonaTags)
+                if (x?.PersonaTags != null)
                 {
-                    var tag = context.Tags.FirstOrDefault(o => o.Id == personaTag.TagId);
-                    context.AgentTags.Add(new AgentTag { AgentId = agentId, Score = random.Next(personaTag.Low, personaTag.High), Tag = tag });
-                }
+                    foreach (var personaTag in x.PersonaTags)
+                    {
+                        var tag = context.Tags.FirstOrDefault(o => o.Id == personaTag.TagId);
+                        context.AgentTags.Add(new AgentTag { AgentId = agentId, Score = random.Next(personaTag.Low, personaTag.High), Tag = tag });
+                    }
 
-                agentId = Guid.NewGuid();
-                context.Agents.Add(new Agent { Id = agentId, MachineId = Guid.NewGuid(), Username = "andy11", FirstName = "Andy", LastName = "Tanner" });
-                x = context.Personas.FirstOrDefault(o => o.Name.ToLower() == "news");
-                foreach (var personaTag in x?.PersonaTags)
-                {
-                    var tag = context.Tags.FirstOrDefault(o => o.Id == personaTag.TagId);
-                    context.AgentTags.Add(new AgentTag { AgentId = agentId, Score = random.Next(personaTag.Low, personaTag.High), Tag = tag });
+                    agentId = Guid.NewGuid();
+                    context.Agents.Add(new Agent
+                        { Id = agentId, MachineId = Guid.NewGuid(), Username = "andy11", FirstName = "Andy", LastName = "Tanner" });
+                    x = context.Personas.FirstOrDefault(o => o.Name.ToLower() == "news");
+                    if (x?.PersonaTags != null)
+                        foreach (var personaTag in x.PersonaTags)
+                        {
+                            var tag = context.Tags.FirstOrDefault(o => o.Id == personaTag.TagId);
+                            context.AgentTags.Add(new AgentTag
+                                { AgentId = agentId, Score = random.Next(personaTag.Low, personaTag.High), Tag = tag });
+                        }
                 }
 
                 context.SaveChanges();

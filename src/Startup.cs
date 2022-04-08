@@ -11,7 +11,6 @@ DM20-0370
 using System;
 using System.IO;
 using System.Reflection;
-using AutoMapper;
 using Ghosts.Spectre.Infrastructure.Data;
 using Ghosts.Spectre.Infrastructure.Services;
 using Microsoft.AspNetCore.Builder;
