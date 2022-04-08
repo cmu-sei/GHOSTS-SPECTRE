@@ -17,14 +17,10 @@ namespace Ghosts.Spectre.Infrastructure.Extensions
     {
         public static string ToCondensedLowerCase(this string input)
         {
-            if (string.IsNullOrEmpty(input))
-            {
-                return input;
-            }
-            return input.ToLower();
+            return string.IsNullOrEmpty(input) ? input : input.ToLower();
 
-            var startUnderscores = Regex.Match(input, @"^+");
-            return startUnderscores + Regex.Replace(input, @"([a-z0-9])([A-Z])", "$1$2").ToLower();
+            //var startUnderscores = Regex.Match(input, @"^+");
+            //return startUnderscores + Regex.Replace(input, @"([a-z0-9])([A-Z])", "$1$2").ToLower();
         }
 
         public static string Clean(this string x, bool isLinux, bool isOsx)

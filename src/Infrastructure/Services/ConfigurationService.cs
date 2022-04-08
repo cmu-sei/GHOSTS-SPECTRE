@@ -21,7 +21,7 @@ namespace Ghosts.Spectre.Infrastructure.Services
             {
                 try
                 {
-                    var x = (System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly()?.CodeBase)).Clean(OsExtensions.IsLinux(), OsExtensions.IsOSX());
+                    var x = (System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location)).Clean(OsExtensions.IsLinux(), OsExtensions.IsOSX());
                     return x;
                 }
                 catch

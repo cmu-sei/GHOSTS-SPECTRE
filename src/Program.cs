@@ -47,7 +47,6 @@ namespace Ghosts.Spectre
                 catch (Exception ex)
                 {
                     Console.WriteLine("An error occurred while seeding the PREFERENCES database: " + ex);
-                    throw;
                 }
             }
 

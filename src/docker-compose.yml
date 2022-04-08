@@ -18,9 +18,9 @@ services:
     image: dustinupdyke/ghosts-spectre
     container_name: ghosts-spectre
     ports:
-      - '5001:5000'
+      - '5002:5000'
     networks:
       - ghosts-network
     restart: always
-    volumes:
-      - ./_data:/app/config
+#    volumes:
+#      - ./_data:/app/config

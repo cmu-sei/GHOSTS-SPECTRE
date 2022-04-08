@@ -159,12 +159,19 @@ namespace Ghosts.Spectre.Controllers
         public async Task<string> Sync(CancellationToken ct)
         {
             var client = new RestClient($"{Program.Configuration.GhostsApiUrl}/api/Machines");
-            client.Timeout = -1;
-            var request = new RestRequest(Method.GET);
+            var request = new RestRequest()
+            {
+                Timeout = -1
+            };
             request.AddHeader("accept", "application/json");
-            var response = client.Execute(request);
+            var response = await client.ExecuteGetAsync(request, cancellationToken: ct);
             var machines = JsonConvert.DeserializeObject<IEnumerable<Machine>>(response.Content);
 
+            if (machines == null)
+            {
+                return "No machines found";
+            }
+            
             var i = 0;
             foreach (var machine in machines)
             {
