@@ -22,5 +22,5 @@ services:
     networks:
       - ghosts-network
     restart: always
-#    volumes:
-#      - ./_data:/app/config
+    volumes:
+      - ./_data:/app/config
