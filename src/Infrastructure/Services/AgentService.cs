@@ -69,7 +69,7 @@ namespace Ghosts.Spectre.Infrastructure.Services
         public async Task<Agent> Create(AgentUpdate agent, int? personaId, CancellationToken ct)
         {
             var createdAgent = _mapper.Map<Infrastructure.Repositories.Agent>(agent);
-            await _context.Agents.AddAsync(createdAgent, ct);
+            _context.Agents.Add(createdAgent);
             await _context.SaveChangesAsync(ct);
 
             var personaService = new PersonaService(this._context, this._mapper);
