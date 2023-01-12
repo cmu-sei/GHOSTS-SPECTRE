@@ -1,16 +1,10 @@
-# ![ghosts](assets/ghosts-spectre-sm.png) SPECTRE (GHOSTS AGENT PREFERENCES)
+# SPECTRE (GHOSTS Agent Preference Engine)
 
-## TLDR;
-
-Agent browsing patterns are no longer random, and match different types of users on a network. These patterns improve over time.
-
-Also, this simple model of ML can now be used for other types of agent activity. This makes for an exciting future on the GHOSTS platform.
-
-## Using Machine Learning to Increase NPC Fidelity with Dynamic Preferences Used in Forward-Looking Decisions
-
-As GHOSTS agents make more informed, and hopefully, more complex decisions, there is a need for each agent to have a system of preferences existing at the time the agent is created, and for an ability to update those preferences over time as the agent continues to make decisions and measure the outcome of those decisions afterward.
+As GHOSTS agents make more informed, and hopefully, more complex decisions, there is a need for each agent to have a system of preferences existing at the time the agent is created, and for an ability to update those preferences over time as the agent continues to make decisions and measure the outcome of those decisions afterwards.
 
 SPECTRE provides GHOSTS enables agents to make preferenced decisions and to use the outcome of those decisions to learn and evaluate future choices more intelligently.
+
+[Documentation for SPECTRE is here](https://cmu-sei.github.io/GHOSTS/spectre/) with easy access to the rest of the framework as well.
 
 ## How SPECTRE works
 
@@ -18,7 +12,7 @@ SPECTRE currently has two components:
 
 ### PREFERENCE ENGINE
 
-- Administrator creates the types of personas they wish to have GHOSTS agents represent
+- An administrator creates the types of personas they wish to have GHOSTS agents represent
 - GHOSTS agents report in their browser history to the GHOSTS C2 API
 - If the agent has no persona, SPECTRE assigns one at random
 - The persona assignment randomly creates different preferences for the agent based on persona settings (not unlike character creation in D&D)
