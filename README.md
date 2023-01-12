@@ -29,31 +29,8 @@ SPECTRE currently has two components:
 
 The incoming GHOSTS agent browsing activity can be attenuated to individual agent preferences after they are assigned some number of preferences based on default persona profiles. SPECTRE will aggregate this information periodically and perform model training and testing against that browsing activity, and recommend new browsing patterns for that agent to execute. This basically creates a new activity timeline for the agent. This cycle is referred to as a "Test". At the conclusion of any given test, that information would be used to inform the next round of ML testing done.
 
-## MORE
+## License
 
-- [GHOSTS project home](https://github.com/cmu-sei/GHOSTS)
-- Please contact the GHOSTS team with any questions or comments!
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution.
 
-## How to Install SPECTRE
-
-SPECTRE installs alongside an existing [GHOSTS installation](https://github.com/cmu-sei/GHOSTS) as a separate docker container. With a few configuration changes, you should be up and running in minimal time.
-
-There are only two configuration settings, both contained within **appsettings.json**:
-
-```
-DefaultConnection"DefaultConnection": "Host=localhost;Port=5432;Database=preferences;User Id=ghosts;Password=scotty@1;Pooling=true;Command Timeout=9900"
-
-"GhostsApiUrl": "http://localhost:5000"
-```
-
-1. The first setting is for your connection to a necessary postgres database, which SPECTRE will use for its operations. It is fine to host this on the same machine or container that you might be using for GHOSTS itself. In this case either use the same user as GHOSTS, or create a new user for SPECTRE.
-
-2. The second setting is for SPECTRE to access the GHOSTS API endpoints. This is used to get information about machines and to update their timelines, based on SPECTRE findings and executions.
-
-## How to use SPECTRE
-
-See Wiki
-
----
-
-![ghosts](assets/ghosts-spectre.png)
+Copyright 2020 Carnegie Mellon University. All Rights Reserved. See LICENSE.md file for terms.
