@@ -4,7 +4,7 @@ As GHOSTS agents make more informed, and hopefully, more complex decisions, ther
 
 SPECTRE provides GHOSTS enables agents to make preferenced decisions and to use the outcome of those decisions to learn and evaluate future choices more intelligently.
 
-[Documentation for SPECTRE is here](https://cmu-sei.github.io/GHOSTS/spectre/) with easy access to the rest of the framework as well.
+[Documentation for SPECTRE is here](https://cmu-sei.github.io/GHOSTS/spectre/) with easy access to the rest of the GHOSTS framework as well.
 
 ## How SPECTRE works
 
