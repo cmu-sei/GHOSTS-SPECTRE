@@ -15,11 +15,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NLog;
 
 namespace Ghosts.Spectre
 {
     public class Program
     {
+        private static readonly Logger log = LogManager.GetCurrentClassLogger();
+
         public static Configuration Configuration { get; set; }
         public static void Main(string[] args)
         {
@@ -46,10 +49,10 @@ namespace Ghosts.Spectre
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("An error occurred while seeding the PREFERENCES database: " + ex);
+                    log.Error("An error occurred while seeding the PREFERENCES database: " + ex);
                 }
             }
-
+            log.Info("GHOSTS SPECTRE is starting up...");
             host.Run();
         }
 

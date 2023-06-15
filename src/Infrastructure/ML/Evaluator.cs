@@ -19,6 +19,7 @@ using Microsoft.ML.Data;
 using Microsoft.ML.Trainers;
 using Ghosts.Spectre.Infrastructure.Extensions;
 using Ghosts.Spectre.Infrastructure.Services;
+using NLog;
 using static Ghosts.Spectre.Infrastructure.ML.MLModels;
 
 namespace Ghosts.Spectre.Infrastructure.ML
@@ -29,6 +30,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
         private static List<Agent> Agents;
         private static List<Site> Sites;
         private static List<string> results = new List<string>();
+        private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
         public static BrowseRecommendationsResults Run(Configuration config = null)
         {
@@ -47,21 +49,35 @@ namespace Ghosts.Spectre.Infrastructure.ML
             if (!Directory.Exists($"{Configuration.BaseDirectory}/dependencies"))
                 Directory.CreateDirectory($"{Configuration.BaseDirectory}/dependencies");
 
+            var agents = 0;
+            var sites = 0;
+            var browse = 0;
             if (!File.Exists(Config.AgentsFile))
             {
                 results.Add("Generating agents file...");
-                Generators.GenerateAgentsFile(Config);
+                agents = Generators.GenerateAgentsFile(Config);
             }
             if (!File.Exists(Config.SitesFile))
             {
                 results.Add("Generating sites file...");
-                Generators.GenerateSitesFile(Config);
+                sites = Generators.GenerateSitesFile(Config);
             }
 
             if (!File.Exists(Config.InputFilePref) || !File.Exists(Config.InputFileRand))
             {
                 results.Add("Generating browse history files...");
-                Generators.GenerateNewBrowseFiles(Config);
+                browse = Generators.GenerateNewBrowseFiles(Config);
+            }
+
+            // not enough data generated
+            if (agents == 0 && sites == 0 && browse == 0)
+            {
+                foreach (var result in results)
+                {
+                    log.Trace(result);
+                }
+                log.Trace("Sorry, not enough data generated. Exiting...");
+                return new BrowseRecommendationsResults();
             }
 
             var typesToProcess = new[] { "pref", "rand" };
@@ -163,6 +179,9 @@ namespace Ghosts.Spectre.Infrastructure.ML
                     }
                 }
 
+                // did files generate required data?
+                
+                
                 results.Add($"Initializing model and associated requirements...");
                 if (!File.Exists(Config.ModelFile))
                 {

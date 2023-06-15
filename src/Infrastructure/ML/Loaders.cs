@@ -14,12 +14,14 @@ using System.Text;
 using Dapper;
 using Ghosts.Spectre.Infrastructure.Extensions;
 using Ghosts.Spectre.Infrastructure.Services;
+using NLog;
 using Npgsql;
 
 namespace Ghosts.Spectre.Infrastructure.ML
 {
     public static class Loaders
     {
+        private static readonly Logger log = LogManager.GetCurrentClassLogger();
         internal static void LoadSeedData()
         {
             var dir = Directory.CreateDirectory($"{Configuration.BaseDirectory}{Path.DirectorySeparatorChar}tmp");
@@ -33,19 +35,22 @@ namespace Ghosts.Spectre.Infrastructure.ML
             {
                 connection.Open();
 
-
                 var sb = new StringBuilder();
                 var lines = File.ReadLines(importFile.AppToDbDirectory());
+                var i = 0;
                 foreach (var line in lines)
                 {
                     var lineArray = line.Split(',');
                     sb.AppendFormat(
                             $"insert into ml_sites (globalrank, tldrank, domain, tld, refsubnets, refips, idn_domain, idn_tld, prevglobalrank, prevtldrank, prevrefsubnets, prevrefips) VALUES ('{importFile.AppToDbDirectory()}', '{line[0]}', '{line[1]}', '{line[2]}', '{line[3]}', '{line[4]}', '{line[5]}', '{line[6]}', '{line[7]}', '{line[8]}', '{line[9]}', '{line[10]}');")
                         .Append(Environment.NewLine);
+                    i++;
                 }
 
                 connection.Execute(sb.ToString());
 
+                log.Trace($"Inserted {i} records to ml_sites");
+                
                 seedFile =
                     $"{ConfigurationService.InstalledPath}{Path.DirectorySeparatorChar}config{Path.DirectorySeparatorChar}categories.csv";
                 importFile = $"{dir}{Path.DirectorySeparatorChar}categories.csv";
@@ -54,13 +59,17 @@ namespace Ghosts.Spectre.Infrastructure.ML
 
                 sb = new StringBuilder();
                 lines = File.ReadLines(importFile.AppToDbDirectory());
+                i = 0;
                 foreach (var line in lines)
                 {
                     var lineArray = line.Split(',');
                     sb.AppendFormat($"insert into ml_categories (url, cats) VALUES ('{line[0]}', '{line[1]}');").Append(Environment.NewLine);
+                    i++;
                 }
 
                 connection.Execute(sb.ToString());
+                
+                log.Trace($"Inserted {i} records to ml_categories");
             }
 
             Directory.Delete(dir.FullName, true);
