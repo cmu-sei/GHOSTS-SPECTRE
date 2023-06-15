@@ -8,13 +8,13 @@
         <noWarn>1591</noWarn>
 
         <AssemblyName>ghosts.spectre</AssemblyName>
-        <ReleaseVersion>0.1.1.0</ReleaseVersion>
-        <Version>0.1.1.0</Version>
-        <AssemblyVersion>0.1.1.0</AssemblyVersion>
-        <FileVersion>0.1.1.0</FileVersion>
+        <ReleaseVersion>0.1.2.0</ReleaseVersion>
+        <Version>0.1.2.0</Version>
+        <AssemblyVersion>0.1.2.0</AssemblyVersion>
+        <FileVersion>0.1.2.0</FileVersion>
         <SynchReleaseVersion>false</SynchReleaseVersion>
         
-        <Authors>Dustin Updyke for Carnegie Mellon University</Authors>
+        <Authors>GHOSTS Dev Team for Carnegie Mellon University</Authors>
         <Company>Carnegie Mellon University</Company>
         <Product>GHOSTS SPECTRE</Product>
         <Description>GHOSTS SPECTRE (GHOSTS AGENT PREFERENCES) - please email ddupdyke [at] sei.cmu.edu with bugs/requests/other</Description>

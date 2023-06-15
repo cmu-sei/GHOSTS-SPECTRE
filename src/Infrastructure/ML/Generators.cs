@@ -8,6 +8,9 @@ Carnegie Mellon® and CERT® are registered in the U.S. Patent and Trademark Off
 DM20-0370
 */
 
+using System;
+using System.IO;
+using System.Text;
 using Dapper;
 using Ghosts.Spectre.Infrastructure.Extensions;
 using Npgsql;
@@ -16,19 +19,35 @@ namespace Ghosts.Spectre.Infrastructure.ML
 {
     internal static class Generators
     {
+        private static void EnsureCreated(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+
+            if (Path.GetExtension(path).Length > 0)
+            {
+                path = Path.GetDirectoryName(path);
+            }
+            
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
         internal static void GenerateNewBrowseFiles(Configuration config)
         {
-            using (var connection = new NpgsqlConnection(Program.Configuration.ConnectionString))
-            {
-                connection.Open();
+            EnsureCreated(config.InputFilePref.AppToDbDirectory());
+            EnsureCreated(config.InputFileRand.AppToDbDirectory());
 
-                connection.Execute("truncate table ml_agent_browse_history;");
-                connection.Execute("call create_preferenced();");
-                connection.Execute("truncate table ml_agent_browse_history_random;");
-                connection.Execute("call create_random();");
+            using var connection = new NpgsqlConnection(Program.Configuration.ConnectionString);
+            connection.Open();
 
-                var s = $@"copy (
-                        select user_id, item_id,
+            connection.Execute("truncate table ml_agent_browse_history;");
+            connection.Execute("call create_preferenced();");
+            connection.Execute("truncate table ml_agent_browse_history_random;");
+            connection.Execute("call create_random();");
+
+            var s = @"select user_id, item_id,
                             CASE
                                 WHEN vw_agentprefs.preference = category THEN 5
                                 ELSE 1
@@ -37,12 +56,23 @@ namespace Ghosts.Spectre.Infrastructure.ML
                             timestamp, 0 as iteration
                         from vw_browsehistory as b
                             right join vw_agentprefs on vw_agentprefs.agentid = b.agentid
-                        order by timestamp
-                ) To '{config.InputFilePref.AppToDbDirectory()}' WITH (FORMAT CSV, HEADER);";
-                connection.Execute(s);
+                        order by timestamp;";
 
-                s = $@"copy (
-                        select user_id, item_id,
+            var sb = new StringBuilder("user_id,item_id,rating,timestamp,iteration");
+            sb.Append(Environment.NewLine);
+            using (var r = connection.ExecuteReader(s))
+            {
+                while (r.Read())
+                {
+                    sb.Append(r["user_id"]).Append(',').Append(r["item_id"]).Append(',').Append(r["rating"]).Append(',').Append(r["timestamp"])
+                        .Append(',').Append(r["iteration"]).Append(Environment.NewLine);
+                }
+            }
+            File.WriteAllText(config.InputFilePref.AppToDbDirectory(), sb.ToString());
+
+            sb = new StringBuilder("user_id,item_id");
+            sb.Append(Environment.NewLine);
+            s = @"select user_id, item_id,
                             CASE
                                 WHEN vw_agentprefs.preference = category THEN 5
                                 ELSE 1
@@ -51,78 +81,116 @@ namespace Ghosts.Spectre.Infrastructure.ML
                             timestamp, 0 as iteration
                         from vw_browsehistory_random as b
                             right join vw_agentprefs on vw_agentprefs.agentid = b.agentid
-                        order by timestamp
-                ) To '{config.InputFileRand.AppToDbDirectory()}' WITH (FORMAT CSV, HEADER);";
-                connection.Execute(s);
+                        order by timestamp;";
+            using (var r = connection.ExecuteReader(s))
+            {
+                while (r.Read())
+                {
+                    sb.Append(r["user_id"]).Append(',').Append(r["item_id"]).Append(Environment.NewLine);
+                }
             }
+            File.WriteAllText(config.InputFileRand.AppToDbDirectory(), sb.ToString());
         }
 
         internal static void GenerateSitesFile(Configuration config)
         {
-            using (var connection = new NpgsqlConnection(Program.Configuration.ConnectionString))
-            {
-                connection.Open();
+            EnsureCreated(config.SitesFile.AppToDbDirectory());
 
-                var s = $@"copy (
-                        select s.id as site_id, c.cats
+            using var connection = new NpgsqlConnection(Program.Configuration.ConnectionString);
+            connection.Open();
+
+            var sb = new StringBuilder("site_id,cats");
+            sb.Append(Environment.NewLine);
+            var s = @"select s.id as site_id, c.cats
                         from ml_sites as s, ml_categories as c
-                        where s.domain = c.url and s.id < 500000 and c.cats not like '%|%'
-                    ) To '{config.SitesFile.AppToDbDirectory()}' WITH (FORMAT CSV, HEADER);";
-                connection.Execute(s);
+                        where s.domain = c.url and s.id < 500000 and c.cats not like '%|%';";
+            using (var r = connection.ExecuteReader(s))
+            {
+                while (r.Read())
+                {
+                    sb.Append(r["site_id"]).Append(',').Append(r["cats"]).Append(Environment.NewLine);
+                }
             }
+            File.WriteAllText(config.SitesFile.AppToDbDirectory(), sb.ToString());
         }
 
         internal static void GenerateAgentsFile(Configuration config)
         {
-            using (var connection = new NpgsqlConnection(Program.Configuration.ConnectionString))
-            {
-                connection.Open();
+            EnsureCreated(config.AgentsFile.AppToDbDirectory());
 
-                var s = $@"copy (
-                    select a2.cloudid, preference, score
+            using var connection = new NpgsqlConnection(Program.Configuration.ConnectionString);
+            connection.Open();
+
+            var s = @"select a2.cloudid, preference, score
                         from vw_agentprefs as a, agents as a2
                         where a.agentid = a2.id
-                        order by cloudid
-                    ) To '{config.AgentsFile.AppToDbDirectory()}' WITH (FORMAT CSV, HEADER);";
-                connection.Execute(s);
+                        order by cloudid;";
+            var sb = new StringBuilder("cloudid,preference,score");
+            sb.Append(Environment.NewLine);
+            using (var r = connection.ExecuteReader(s))
+            {
+                while (r.Read())
+                {
+                    sb.Append(r["cloudid"]).Append(',').Append(r["preference"]).Append(',').Append(r["score"]).Append(Environment.NewLine);
+                }
             }
+            File.WriteAllText(config.AgentsFile.AppToDbDirectory(), sb.ToString());
         }
 
         internal static void GenerateReportFile(Configuration config)
         {
-            using (var connection = new NpgsqlConnection(Program.Configuration.ConnectionString))
+            EnsureCreated(config.Campaign.AppToDbDirectory());
+            EnsureCreated(config.ReportFile.AppToDbDirectory());
+            EnsureCreated(config.ResultFile.AppToDbDirectory());
+
+            using var connection = new NpgsqlConnection(Program.Configuration.ConnectionString);
+            connection.Open();
+
+            connection.Execute("truncate table ml_learned_import_extended;");
+
+            //load ML results file
+            var sb = new StringBuilder();
+            var lines = File.ReadLines(config.Campaign.AppToDbDirectory());
+            foreach (var line in lines)
             {
-                connection.Open();
+                var lineArray = line.Split(',');
+                sb.AppendFormat($"insert into ml_learned_recommendations (campaign, cloudid, itemid, created, iteration) values ('{config.Campaign.AppToDbDirectory()}', '{lineArray[0]}', '{lineArray[1]}', '{lineArray[2]}', '{lineArray[3]}');");
+            }
+            connection.Execute(sb.ToString());
 
-                connection.Execute("truncate table ml_learned_import_extended;");
-
-                //load ML results file
-                var s = $@"COPY ml_learned_import_extended FROM '{config.OutputFile.AppToDbDirectory()}' delimiter ',' CSV HEADER;
-                    insert into ml_learned_recommendations
-                        (campaign, cloudid, itemid, created, iteration)
-                    select '{config.Campaign.AppToDbDirectory()}', cloudid, itemid, now(), iteration
-                    from ml_learned_import_extended;";
-                connection.Execute(s);
-
-                //gen report
-                s = $@"copy (
-                    select a.username, c.cats as preference, r.iteration, count(*) as count
+            //gen report
+            sb = new StringBuilder("username,preference,iteration,count");
+            sb.Append(Environment.NewLine);
+            var s = $@"select a.username, c.cats as preference, r.iteration, count(*) as count
                         from ml_learned_recommendations as r, agents as a, ml_categories as c, ml_sites as s
                         where r.itemid = s.id and s.domain = c.url and c.cats not like '%|%'
                             and a.cloudid = r.cloudid and r.campaign = '{config.Campaign}'
                         group by r.iteration, a.username, c.cats
-                        order by iteration, username, cats
-                ) To '{config.ReportFile.AppToDbDirectory()}' WITH (FORMAT CSV, HEADER);";
-                connection.Execute(s);
-                
-                //gen final results
-                s = $@"copy (
-                    select distinct a.id, s.domain from ml_learned_recommendations as recs, agents as a, ml_sites as s where
-                        recs.cloudid = a.cloudid and s.id = recs.itemid and recs.campaign = '{config.Campaign}'
-                        order by a.id, s.domain
-                ) To '{config.ResultFile.AppToDbDirectory()}' WITH (FORMAT CSV, HEADER);";
-                connection.Execute(s);
+                        order by iteration, username, cats;";
+            using (var r = connection.ExecuteReader(s))
+            {
+                while (r.Read())
+                {
+                    sb.Append(r["username"]).Append(',').Append(r["preference"]).Append(',').Append(r["iteration"]).Append(',').Append(r["count"])
+                        .Append(Environment.NewLine);
+                }
             }
+            File.WriteAllText(config.ReportFile.AppToDbDirectory(), sb.ToString());
+                
+            //gen final results
+            sb = new StringBuilder("id,recs,a,s");
+            sb.Append(Environment.NewLine);
+            s = $@"select distinct a.id, s.domain from ml_learned_recommendations as recs, agents as a, ml_sites as s where
+                        recs.cloudid = a.cloudid and s.id = recs.itemid and recs.campaign = '{config.Campaign}'
+                        order by a.id, s.domain;";
+            using (var r = connection.ExecuteReader(s))
+            {
+                while (r.Read())
+                {
+                    sb.Append(r["id"]).Append(',').Append(r["recs"]).Append(',').Append(r["a"]).Append(',').Append(r["s"]).Append(Environment.NewLine);
+                }
+            }
+            File.WriteAllText(config.ResultFile.AppToDbDirectory(), sb.ToString());
         }
     }
 }

@@ -8,7 +8,9 @@ Carnegie Mellon® and CERT® are registered in the U.S. Patent and Trademark Off
 DM20-0370
 */
 
+using System;
 using System.IO;
+using System.Text;
 using Dapper;
 using Ghosts.Spectre.Infrastructure.Extensions;
 using Ghosts.Spectre.Infrastructure.Services;
@@ -26,23 +28,41 @@ namespace Ghosts.Spectre.Infrastructure.ML
 
             var importFile = $"{dir}{Path.DirectorySeparatorChar}sites.csv";
             File.Move(seedFile, importFile, true);
-            
+
             using (var connection = new NpgsqlConnection(Program.Configuration.ConnectionString))
             {
                 connection.Open();
-                connection.Execute(
-                    $"COPY ml_sites (globalrank, tldrank, domain, tld, refsubnets, refips, idn_domain, idn_tld, prevglobalrank, prevtldrank, prevrefsubnets, prevrefips) FROM '{importFile.AppToDbDirectory()}' WITH (FORMAT csv)");
-                
+
+
+                var sb = new StringBuilder();
+                var lines = File.ReadLines(importFile.AppToDbDirectory());
+                foreach (var line in lines)
+                {
+                    var lineArray = line.Split(',');
+                    sb.AppendFormat(
+                            $"insert into ml_sites (globalrank, tldrank, domain, tld, refsubnets, refips, idn_domain, idn_tld, prevglobalrank, prevtldrank, prevrefsubnets, prevrefips) VALUES ('{importFile.AppToDbDirectory()}', '{line[0]}', '{line[1]}', '{line[2]}', '{line[3]}', '{line[4]}', '{line[5]}', '{line[6]}', '{line[7]}', '{line[8]}', '{line[9]}', '{line[10]}');")
+                        .Append(Environment.NewLine);
+                }
+
+                connection.Execute(sb.ToString());
+
                 seedFile =
                     $"{ConfigurationService.InstalledPath}{Path.DirectorySeparatorChar}config{Path.DirectorySeparatorChar}categories.csv";
                 importFile = $"{dir}{Path.DirectorySeparatorChar}categories.csv";
-            
+
                 File.Move(seedFile, importFile, true);
-                
-                connection.Execute(
-                    $"COPY ml_categories (url, cats) FROM '{importFile.AppToDbDirectory()}' WITH (FORMAT csv)");
+
+                sb = new StringBuilder();
+                lines = File.ReadLines(importFile.AppToDbDirectory());
+                foreach (var line in lines)
+                {
+                    var lineArray = line.Split(',');
+                    sb.AppendFormat($"insert into ml_categories (url, cats) VALUES ('{line[0]}', '{line[1]}');").Append(Environment.NewLine);
+                }
+
+                connection.Execute(sb.ToString());
             }
-            
+
             Directory.Delete(dir.FullName, true);
         }
     }

@@ -85,11 +85,15 @@ namespace Ghosts.Spectre.Infrastructure.ML
                         int recordsCopied = 0;
                         while (recordsCopied < numberForTest)
                         {
-                            var r = new Random();
-                            var randomLineNumber = r.Next(1, lines.Length - 1);
-                            while (linesToRemove.Contains(randomLineNumber))
+                            var randomLineNumber = 0;
+                            if (lines.Length > 1)
                             {
+                                var r = new Random();
                                 randomLineNumber = r.Next(1, lines.Length - 1);
+                                while (linesToRemove.Contains(randomLineNumber))
+                                {
+                                    randomLineNumber = r.Next(1, lines.Length - 1);
+                                }
                             }
                             var line = lines[randomLineNumber];
                             w.WriteLine(line);
