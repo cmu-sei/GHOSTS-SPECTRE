@@ -10,12 +10,12 @@ DM20-0370
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using static Ghosts.Spectre.Infrastructure.ML.Models;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.ML;
-using Microsoft.ML.Data;
 using Microsoft.ML.Trainers;
 using Ghosts.Spectre.Infrastructure.Extensions;
 using Ghosts.Spectre.Infrastructure.Services;
@@ -24,20 +24,17 @@ using static Ghosts.Spectre.Infrastructure.ML.MLModels;
 
 namespace Ghosts.Spectre.Infrastructure.ML
 {
-    public class Evaluator
+    public static class Evaluator
     {
         private static Configuration Config;
         private static List<Agent> Agents;
         private static List<Site> Sites;
-        private static List<string> results = new List<string>();
+        private static readonly List<string> results = new();
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
         public static BrowseRecommendationsResults Run(Configuration config = null)
         {
-            if (config == null)
-                Config = new Configuration();
-            else
-                Config = config;
+            Config = config ?? new Configuration();
             
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -70,13 +67,13 @@ namespace Ghosts.Spectre.Infrastructure.ML
             }
 
             // not enough data generated
-            if (agents == 0 && sites == 0 && browse == 0)
+            if (sites == 0 && browse == 0)
             {
                 foreach (var result in results)
                 {
                     log.Trace(result);
                 }
-                log.Trace("Sorry, not enough data generated. Exiting...");
+                log.Trace($"Sorry, not enough data generated. Browse history was {browse} and sites was {sites} over {agents} agents. Exiting...");
                 return new BrowseRecommendationsResults();
             }
 
@@ -150,8 +147,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
                     using (var streamReader = new StreamReader(fileStream, Encoding.UTF8, true, 128))
                     {
                         var i = -1;
-                        String line;
-                        while ((line = streamReader.ReadLine()) != null)
+                        while (streamReader.ReadLine() is { } line)
                         {
                             i++;
                             if (i == 0) continue;
@@ -166,15 +162,17 @@ namespace Ghosts.Spectre.Infrastructure.ML
                 {
                     using (var streamReader = new StreamReader(fileStream, Encoding.UTF8, true, 128))
                     {
-                        String line;
-                        while ((line = streamReader.ReadLine()) != null)
+                        while (streamReader.ReadLine() is { } line)
                         {
                             var o = line.Split(Convert.ToChar(","));
                             try
                             {
                                 Sites.Add(new Site(Convert.ToInt32(o[0]), o[1]));
                             }
-                            catch { } //lazy, don't @ me
+                            catch
+                            {
+                                // ignored
+                            }
                         }
                     }
                 }
@@ -222,9 +220,8 @@ namespace Ghosts.Spectre.Infrastructure.ML
                 {
                     Config.CurrentIteration = i;
                     //Define DataViewSchema for data preparation pipeline and trained model
-                    DataViewSchema modelSchema;
                     // Load trained model
-                    var trainedModel = mlContext.Model.Load(Config.ModelFile, out modelSchema);
+                    var trainedModel = mlContext.Model.Load(Config.ModelFile, out _);
 
                     // Load data preparation pipeline and trained model
                     UseModelForSinglePrediction(mlContext, trainedModel);
@@ -246,15 +243,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
             return browseRecommendationsResults;
         }
 
-        private static void PrintMetrics(RegressionMetrics metrics)
-        {
-            results.Add($"MeanAbsoluteError: {metrics.MeanAbsoluteError}");
-            results.Add($"MeanSquaredError: {metrics.MeanSquaredError}");
-            results.Add($"RootMeanSquaredError: {metrics.RootMeanSquaredError}");
-            results.Add($"RSquared: {metrics.RSquared}");
-        }
-
-        public static (IDataView training, IDataView test) LoadData(MLContext mlContext)
+        private static (IDataView training, IDataView test) LoadData(MLContext mlContext)
         {
             if (!File.Exists(Config.OutputFile))
             {
@@ -263,10 +252,8 @@ namespace Ghosts.Spectre.Infrastructure.ML
 
             if (!File.Exists(Config.StatsFile))
             {
-                using (StreamWriter w = File.AppendText(Config.StatsFile))
-                {
-                    w.WriteLine("iteration,RootMeanSquaredError,RSquared,LossFunction,MeanAbsoluteError,MeanSquaredError".ToLower());
-                }
+                using var w = File.AppendText(Config.StatsFile);
+                w.WriteLine("iteration,RootMeanSquaredError,RSquared,LossFunction,MeanAbsoluteError,MeanSquaredError".ToLower());
             }
 
             IDataView trainingDataView = mlContext.Data.LoadFromTextFile<BrowseHistory>(Config.InputFile, hasHeader: true, separatorChar: ',');
@@ -275,7 +262,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
             return (trainingDataView, testDataView);
         }
 
-        public static ITransformer BuildAndTrainModel(MLContext mlContext, IDataView trainingDataView)
+        private static ITransformer BuildAndTrainModel(MLContext mlContext, IDataView trainingDataView)
         {
             IEstimator<ITransformer> estimator = mlContext.Transforms.Conversion
                 .MapValueToKey(outputColumnName: "userIdEncoded", inputColumnName: "userId")
@@ -286,15 +273,14 @@ namespace Ghosts.Spectre.Infrastructure.ML
                 MatrixRowIndexColumnName = "itemIdEncoded",
                 LabelColumnName = "Label",
                 NumberOfIterations = 1000,
-                ApproximationRank = 100
+                ApproximationRank = 100,
+                // options.ApproximationRank = 2;
+                // options.C = 0;
+                // options.Lambda = 0.025;
+                // options.Alpha = 0.01;
+                //options.LossFunction = MatrixFactorizationTrainer.LossFunctionType.SquareLossRegression;
+                Quiet = true
             };
-
-            //options.LossFunction = MatrixFactorizationTrainer.LossFunctionType.SquareLossRegression;
-            // options.Alpha = 0.01;
-            // options.Lambda = 0.025;
-            // options.C = 0;
-            // options.ApproximationRank = 2;
-            options.Quiet = true;
 
             var trainerEstimator = estimator.Append(mlContext.Recommendation().Trainers.MatrixFactorization(options));
             results.Add("Training model...");
@@ -303,20 +289,18 @@ namespace Ghosts.Spectre.Infrastructure.ML
             return model;
         }
 
-        public static void EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer model)
+        private static void EvaluateModel(MLContext mlContext, IDataView testDataView, ITransformer model)
         {
-            using (StreamWriter w = File.AppendText(Config.StatsFile))
-            {
-                results.Add("Evaluating model...");
-                var prediction = model.Transform(testDataView);
-                var metrics = mlContext.Regression.Evaluate(prediction, labelColumnName: "Label", scoreColumnName: "Score");
-                results.Add("Root Mean Squared Error : " + metrics.RootMeanSquaredError.ToString());
-                results.Add("RSquared: " + metrics.RSquared.ToString());
-                w.WriteLine($"{Config.CurrentIteration},{metrics.RootMeanSquaredError},{metrics.RSquared},{metrics.LossFunction},{metrics.MeanAbsoluteError},{metrics.MeanSquaredError}");
-            }
+            using var w = File.AppendText(Config.StatsFile);
+            results.Add("Evaluating model...");
+            var prediction = model.Transform(testDataView);
+            var metrics = mlContext.Regression.Evaluate(prediction, labelColumnName: "Label", scoreColumnName: "Score");
+            results.Add("Root Mean Squared Error : " + metrics.RootMeanSquaredError.ToString(CultureInfo.InvariantCulture));
+            results.Add("RSquared: " + metrics.RSquared.ToString(CultureInfo.InvariantCulture));
+            w.WriteLine($"{Config.CurrentIteration},{metrics.RootMeanSquaredError},{metrics.RSquared},{metrics.LossFunction},{metrics.MeanAbsoluteError},{metrics.MeanSquaredError}");
         }
 
-        public static void UseModelForSinglePrediction(MLContext mlContext, ITransformer model)
+        private static void UseModelForSinglePrediction(MLContext mlContext, ITransformer model)
         {
             OsExtensions.WriteOver($"Processing predictions, pass {Config.CurrentIteration}");
             var predictionEngine = mlContext.Model.CreatePredictionEngine<BrowseHistory, BrowsePrediction>(model);
@@ -336,7 +320,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
 
                     if (Math.Round(itemPrediction.Score, 1) > 3.5)
                     {
-                        var site = Sites.FirstOrDefault(o => o.Id == itemPrediction.ItemId);
+                        var site = Sites.FirstOrDefault(o => Math.Abs(o.Id - itemPrediction.ItemId) < .01);
 
                         if (site == null)
                         {
@@ -359,24 +343,22 @@ namespace Ghosts.Spectre.Infrastructure.ML
                     }
                 }
 
-                using (StreamWriter w = File.AppendText(Config.OutputFile))
+                using var w = File.AppendText(Config.OutputFile);
+                //var rnd = new Random();
+                //var choices = recs.OrderBy(x => rnd.Next()).Take(25);
+                var choices = recs;
+
+                foreach (var rec in choices)
                 {
-                    //var rnd = new Random();
-                    //var choices = recs.OrderBy(x => rnd.Next()).Take(25);
-                    var choices = recs;
+                    var t = DateTime.UtcNow - new DateTime(1970, 1, 1);
+                    var secondsSinceEpoch = (int)t.TotalSeconds;
 
-                    foreach (var rec in choices)
-                    {
-                        TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
-                        int secondsSinceEpoch = (int)t.TotalSeconds;
-
-                        w.WriteLine($"{rec.UserId},{rec.ItemId},{Math.Round(rec.Score, 1)},{secondsSinceEpoch},{rec.Iteration}"); //user_id,item_id,timestamp
-                    }
+                    w.WriteLine($"{rec.UserId},{rec.ItemId},{Math.Round(rec.Score, 1)},{secondsSinceEpoch},{rec.Iteration}"); //user_id,item_id,timestamp
                 }
             }
         }
 
-        public static void SaveModel(MLContext mlContext, DataViewSchema trainingDataViewSchema, ITransformer model)
+        private static void SaveModel(MLContext mlContext, DataViewSchema trainingDataViewSchema, ITransformer model)
         {
             results.Add("Saving the model to a file...");
             mlContext.Model.Save(model, trainingDataViewSchema, Config.ModelFile);

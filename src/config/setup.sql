@@ -11,7 +11,7 @@ as
     FROM agents a,
         agent_tags at,
         tags t
-    WHERE a.status = 1 and a.id = at.agentid
+    WHERE a.id = at.agentid
         AND at.tagid = t.id;
 
 ---
@@ -92,7 +92,7 @@ select distinct a.id, at.score, t.name
 from agents as a,
     agent_tags as at,
     tags as t
-where a.status = 1 and a.id = at.agentid
+where a.id = at.agentid
     and at.tagid = t.id
 LOOP
 
@@ -170,7 +170,7 @@ DECLARE
 BEGIN
     FOR aid IN
     select distinct agents.id as agentid
-    from agents where status = 1
+    from agents 
         LOOP
     for sid in
     select s.id

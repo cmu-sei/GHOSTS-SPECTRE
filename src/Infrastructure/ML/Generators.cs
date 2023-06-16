@@ -58,9 +58,10 @@ namespace Ghosts.Spectre.Infrastructure.ML
                             timestamp, 0 as iteration
                         from vw_browsehistory as b
                             right join vw_agentprefs on vw_agentprefs.agentid = b.agentid
+                        where user_id is not null
                         order by timestamp;";
 
-            var sb = new StringBuilder("user_id,item_id,rating,timestamp,iteration");
+            var sb = new StringBuilder("cloud_id,item_id,rating,timestamp,iteration");
             sb.Append(Environment.NewLine);
             var i = 0;
             using (var r = connection.ExecuteReader(s))
@@ -86,6 +87,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
                             timestamp, 0 as iteration
                         from vw_browsehistory_random as b
                             right join vw_agentprefs on vw_agentprefs.agentid = b.agentid
+                        where user_id is not null
                         order by timestamp;";
             i = 0;
             using (var r = connection.ExecuteReader(s))
@@ -156,7 +158,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
 
         internal static void GenerateReportFile(Configuration config)
         {
-            EnsureCreated(config.Campaign.AppToDbDirectory());
+            EnsureCreated(config.OutputFile.AppToDbDirectory());
             EnsureCreated(config.ReportFile.AppToDbDirectory());
             EnsureCreated(config.ResultFile.AppToDbDirectory());
 
@@ -167,16 +169,19 @@ namespace Ghosts.Spectre.Infrastructure.ML
 
             //load ML results file
             var sb = new StringBuilder();
-            var lines = File.ReadLines(config.Campaign.AppToDbDirectory());
+            var lines = File.ReadLines(config.OutputFile.AppToDbDirectory());
             var i = 0;
             foreach (var line in lines)
             {
-                var lineArray = line.Split(',');
-                sb.AppendFormat($"insert into ml_learned_recommendations (campaign, cloudid, itemid, created, iteration) values ('{config.Campaign.AppToDbDirectory()}', '{lineArray[0]}', '{lineArray[1]}', '{lineArray[2]}', '{lineArray[3]}');");
+                if (i > 0) // skip header
+                {
+                    var lineArray = line.Split(',');
+                    sb.AppendFormat($"insert into ml_learned_recommendations (campaign, cloudid, itemid, created, iteration) values ('{config.Campaign}', '{lineArray[0]}', '{lineArray[1]}', '{lineArray[3]}', '{lineArray[4]}');");
+                }
                 i++;
             }
             connection.Execute(sb.ToString());
-            log.Trace($"Inserted {i} records to ml_learned_recommendations from {config.Campaign.AppToDbDirectory()}");
+            log.Trace($"Inserted {i} records to ml_learned_recommendations from {config.OutputFile.AppToDbDirectory()}");
 
             //gen report
             sb = new StringBuilder("username,preference,iteration,count");
