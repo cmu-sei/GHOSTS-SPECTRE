@@ -42,7 +42,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
                 {
                     var lineArray = line.Split(',');
                     sb.AppendFormat(
-                            $"insert into ml_sites (globalrank, tldrank, domain, tld, refsubnets, refips, idn_domain, idn_tld, prevglobalrank, prevtldrank, prevrefsubnets, prevrefips) VALUES ('{importFile.AppToDbDirectory()}', '{line[0]}', '{line[1]}', '{line[2]}', '{line[3]}', '{line[4]}', '{line[5]}', '{line[6]}', '{line[7]}', '{line[8]}', '{line[9]}', '{line[10]}');")
+                            $"insert into ml_sites (globalrank, tldrank, domain, tld, refsubnets, refips, idn_domain, idn_tld, prevglobalrank, prevtldrank, prevrefsubnets, prevrefips) VALUES ('{lineArray[0]}', '{lineArray[1]}', '{lineArray[2]}', '{lineArray[3]}', '{lineArray[4]}', '{lineArray[5]}', '{lineArray[6]}', '{lineArray[7]}', '{lineArray[8]}', '{lineArray[9]}', '{lineArray[10]}', '{lineArray[11]}');")
                         .Append(Environment.NewLine);
                     i++;
                 }
@@ -63,7 +63,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
                 foreach (var line in lines)
                 {
                     var lineArray = line.Split(',');
-                    sb.AppendFormat($"insert into ml_categories (url, cats) VALUES ('{line[0]}', '{line[1]}');").Append(Environment.NewLine);
+                    sb.AppendFormat($"insert into ml_categories (url, cats) VALUES ('{lineArray[0]}', '{lineArray[1]}');").Append(Environment.NewLine);
                     i++;
                 }
 

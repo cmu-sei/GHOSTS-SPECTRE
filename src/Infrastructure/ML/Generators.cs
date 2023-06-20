@@ -176,7 +176,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
                 if (i > 0) // skip header
                 {
                     var lineArray = line.Split(',');
-                    sb.AppendFormat($"insert into ml_learned_recommendations (campaign, cloudid, itemid, created, iteration) values ('{config.Campaign}', '{lineArray[0]}', '{lineArray[1]}', '{lineArray[3]}', '{lineArray[4]}');");
+                    sb.AppendFormat($"insert into ml_learned_recommendations (campaign, cloudid, itemid, created, iteration) values ('{config.Campaign}', '{lineArray[0]}', '{lineArray[1]}', '{DateTime.Now.ToString()}', '{config.Iterations}');");
                 }
                 i++;
             }
@@ -216,7 +216,7 @@ namespace Ghosts.Spectre.Infrastructure.ML
             {
                 while (r.Read())
                 {
-                    sb.Append(r["id"]).Append(',').Append(r["recs"]).Append(',').Append(r["a"]).Append(',').Append(r["s"]).Append(Environment.NewLine);
+                    sb.Append(r["id"]).Append(',').Append(r["domain"]).Append(Environment.NewLine);
                     i++;
                 }
             }

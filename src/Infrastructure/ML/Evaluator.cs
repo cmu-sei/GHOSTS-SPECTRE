@@ -49,18 +49,31 @@ namespace Ghosts.Spectre.Infrastructure.ML
             var agents = 0;
             var sites = 0;
             var browse = 0;
-            if (!File.Exists(Config.AgentsFile))
+            if (File.Exists(Config.AgentsFile))
+            {
+                agents = File.ReadAllLines(Config.AgentsFile).Length;
+            }
+            else
             {
                 results.Add("Generating agents file...");
                 agents = Generators.GenerateAgentsFile(Config);
             }
-            if (!File.Exists(Config.SitesFile))
+            
+            if (File.Exists(Config.SitesFile))
+            {
+                sites = File.ReadAllLines(Config.SitesFile).Length;
+            }
+            else
             {
                 results.Add("Generating sites file...");
                 sites = Generators.GenerateSitesFile(Config);
             }
 
-            if (!File.Exists(Config.InputFilePref) || !File.Exists(Config.InputFileRand))
+            if (File.Exists(Config.InputFilePref) && File.Exists(Config.InputFileRand))
+            {
+                browse = File.ReadAllLines(Config.InputFilePref).Length;
+            }
+            else
             {
                 results.Add("Generating browse history files...");
                 browse = Generators.GenerateNewBrowseFiles(Config);
